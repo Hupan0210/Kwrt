@@ -28,7 +28,8 @@ jobs:
       # Step 4: Run diy-part.sh script (custom modifications)
       - name: Run diy-part.sh
         run: |
-          bash ./Kwrt/diy-part.sh
+          chmod +x $GITHUB_WORKSPACE/diy-part.sh
+          $GITHUB_WORKSPACE/diy-part.sh
 
       # Step 5: Initialize and update feeds
       - name: Update and install feeds

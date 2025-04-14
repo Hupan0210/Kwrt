@@ -1,51 +1,51 @@
-name: Build-ImmortalWrt-OneCloud
+name: Build ImmortalWrt Firmware
 
 on:
-  workflow_dispatch:
-
-env:
-  REPO_URL: https://github.com/immortalwrt/immortalwrt
-  REPO_BRANCH: master
-  CONFIG_FILE: onecloud.config
-  DIY_SH: diy.sh
-  UPLOAD_BIN_DIR: false
-  UPLOAD_FIRMWARE: true
-  UPLOAD_RELEASE: true
-  TZ: Asia/Shanghai
+  push:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      # Step 1: Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      - name: Initialize Environment
+      # Step 2: Setup Build Environment (if needed, depending on your requirements)
+      - name: Setup Build Environment
         run: |
-          sudo apt update
-          sudo apt install -y qemu-utils ccache
+          sudo apt-get update
+          sudo apt-get install -y build-essential ccache libncurses5-dev zlib1g-dev gawk git wget
 
-      - name: Clone source code
+      # Step 3: Copy custom configuration files (onecloud.config)
+      - name: Copy onecloud.config
         run: |
-          git clone --depth 1 -b $REPO_BRANCH $REPO_URL openwrt
+          cp $GITHUB_WORKSPACE/Kwrt/onecloud.config ./openwrt/.config
+
+      # Step 4: Run diy-part.sh script (custom modifications)
+      - name: Run diy-part.sh
+        run: |
+          bash $GITHUB_WORKSPACE/Kwrt/diy-part.sh
+
+      # Step 5: Initialize and update feeds
+      - name: Update and install feeds
+        run: |
           cd openwrt
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Load Custom Config
-        run: |
-          cp $GITHUB_WORKSPACE/$CONFIG_FILE openwrt/.config
-          chmod +x $GITHUB_WORKSPACE/$DIY_SH
-          cp $GITHUB_WORKSPACE/$DIY_SH openwrt/diy.sh
-
-      - name: Compile Firmware
+      # Step 6: Build the firmware (replace with your actual build command)
+      - name: Build ImmortalWrt firmware
         run: |
           cd openwrt
-          make defconfig
-          make -j$(nproc) || make -j1 V=s
+          make -j$(nproc) V=s
 
-      - name: Upload Firmware to Release
-        uses: ncipollo/release-action@v1
+      # Optional: Upload firmware as artifact (adjust as needed)
+      - name: Upload firmware as artifact
+        uses: actions/upload-artifact@v2
         with:
-          artifacts: "openwrt/bin/targets/*/*/*.img.gz"
-          tag: ${{ github.run_id }}
+          name: immortalwrt-firmware
+          path: ./openwrt/bin/targets/*/image/*.bin

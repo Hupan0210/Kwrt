@@ -33,9 +33,7 @@ jobs:
       # Step 5: 执行 diy-part.sh
       - name: Run diy-part.sh
         run: |
-          chmod +x $GITHUB_WORKSPACE/diy-part.sh
-          $GITHUB_WORKSPACE/diy-part.sh
-
+          bash $GITHUB_WORKSPACE/diy-part.sh
       # Step 6: 初始化 feed
       - name: Update and install feeds
         run: |

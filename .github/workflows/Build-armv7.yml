@@ -1,0 +1,51 @@
+name: Build-ImmortalWrt-OneCloud
+
+on:
+  workflow_dispatch:
+
+env:
+  REPO_URL: https://github.com/immortalwrt/immortalwrt
+  REPO_BRANCH: master
+  CONFIG_FILE: onecloud.config
+  DIY_SH: diy.sh
+  UPLOAD_BIN_DIR: false
+  UPLOAD_FIRMWARE: true
+  UPLOAD_RELEASE: true
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Initialize Environment
+        run: |
+          sudo apt update
+          sudo apt install -y qemu-utils ccache
+
+      - name: Clone source code
+        run: |
+          git clone --depth 1 -b $REPO_BRANCH $REPO_URL openwrt
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Load Custom Config
+        run: |
+          cp $GITHUB_WORKSPACE/$CONFIG_FILE openwrt/.config
+          chmod +x $GITHUB_WORKSPACE/$DIY_SH
+          cp $GITHUB_WORKSPACE/$DIY_SH openwrt/diy.sh
+
+      - name: Compile Firmware
+        run: |
+          cd openwrt
+          make defconfig
+          make -j$(nproc) || make -j1 V=s
+
+      - name: Upload Firmware to Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "openwrt/bin/targets/*/*/*.img.gz"
+          tag: ${{ github.run_id }}

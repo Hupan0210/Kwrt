@@ -14,38 +14,44 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Step 2: Setup Build Environment (if needed, depending on your requirements)
+      # Step 2: Setup Build Environment
       - name: Setup Build Environment
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential ccache libncurses5-dev zlib1g-dev gawk git wget
 
-      # Step 3: Copy custom configuration files (onecloud.config)
+      # Step 3: Clone ImmortalWrt 源码
+      - name: Clone ImmortalWrt
+        run: |
+          git clone https://github.com/immortalwrt/immortalwrt openwrt
+
+      # Step 4: Copy config
       - name: Copy onecloud.config
         run: |
-          cp $GITHUB_WORKSPACE/Kwrt/onecloud.config ./openwrt/.config
+          cp $GITHUB_WORKSPACE/onecloud.config ./openwrt/.config
 
-      # Step 4: Run diy-part.sh script (custom modifications)
+      # Step 5: 执行 diy-part.sh
       - name: Run diy-part.sh
         run: |
-          bash $GITHUB_WORKSPACE/Kwrt/diy-part.sh
+          chmod +x $GITHUB_WORKSPACE/diy-part.sh
+          $GITHUB_WORKSPACE/diy-part.sh
 
-      # Step 5: Initialize and update feeds
+      # Step 6: 初始化 feed
       - name: Update and install feeds
         run: |
           cd openwrt
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      # Step 6: Build the firmware (replace with your actual build command)
+      # Step 7: 编译固件
       - name: Build ImmortalWrt firmware
         run: |
           cd openwrt
           make -j$(nproc) V=s
 
-      # Optional: Upload firmware as artifact (adjust as needed)
+      # Step 8: 上传固件
       - name: Upload firmware as artifact
         uses: actions/upload-artifact@v2
         with:
           name: immortalwrt-firmware
-          path: ./openwrt/bin/targets/*/image/*.bin
+          path: ./openwrt/bin/targets/*/*/*.bin
